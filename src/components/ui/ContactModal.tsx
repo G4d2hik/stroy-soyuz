@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Phone, User } from "lucide-react";
 import { submitLead } from "@/app/actions/submitLead";
+import { sendTelegramFromBrowser } from "@/lib/sendTelegramClient";
 
 export default function ContactModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,8 +42,10 @@ export default function ContactModal() {
     setIsSubmitting(false);
 
     if (result.success) {
+      // Отправляем уведомление в Telegram из браузера (обход блокировки сервера)
+      sendTelegramFromBrowser({ name, phone }, "Модальное окно");
       setIsSuccess(true);
-      setTimeout(close, 3000); // Закрываем через 3 секунды после успеха
+      setTimeout(close, 3000);
     } else {
       alert("К сожалению, произошла ошибка. Пожалуйста, позвоните нам.");
     }

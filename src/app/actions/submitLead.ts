@@ -1,10 +1,63 @@
 "use server";
 
+import https from 'https';
+
+// Надёжная отправка в Telegram через модуль https (обходит проблему с сертификатами)
+function sendTelegramMessage(token: string, chatId: string, text: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const postData = JSON.stringify({
+      chat_id: chatId,
+      text: text,
+      parse_mode: "HTML",
+    });
+
+    const options: https.RequestOptions = {
+      hostname: 'api.telegram.org',
+      port: 443,
+      path: `/bot${token}/sendMessage`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
+      },
+      rejectUnauthorized: false, // Явно игнорируем ошибки сертификатов
+      timeout: 15000,
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk: string) => { data += chunk; });
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          console.log('✅ Telegram: сообщение отправлено успешно');
+          resolve(true);
+        } else {
+          console.error('❌ Telegram API error:', res.statusCode, data);
+          resolve(false);
+        }
+      });
+    });
+
+    req.on('error', (e: Error) => {
+      console.error('❌ Telegram request error:', e.message);
+      resolve(false);
+    });
+
+    req.on('timeout', () => {
+      console.error('❌ Telegram request timeout');
+      req.destroy();
+      resolve(false);
+    });
+
+    req.write(postData);
+    req.end();
+  });
+}
+
 export async function submitLead(data: Record<string, string>, source: string = "Сайт") {
   try {
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-    const AMOCRM_WEBHOOK_URL = process.env.AMOCRM_WEBHOOK_URL;
 
     // 1. Форматируем сообщение для Telegram
     let messageText = `🔥 <b>Новая заявка (${source})</b>\n\n`;
@@ -18,26 +71,15 @@ export async function submitLead(data: Record<string, string>, source: string = 
     if (otherKeys.length > 0) {
       messageText += `📋 <b>Ответы:</b>\n`;
       otherKeys.forEach(key => {
-        // Пропускаем числовые ключи (вопросы по ID), если они есть, и используем нормальные названия
         messageText += `- ${key}: ${data[key]}\n`;
       });
     }
 
-    // 2. Отправка в Telegram
+    // 2. Отправка в Telegram (через https модуль — обходит проблему с сертификатами)
     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-      const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: messageText,
-          parse_mode: "HTML",
-        }),
-      });
-      
-      if (!tgRes.ok) {
-        console.error("Telegram Error:", await tgRes.text());
-      }
+      await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, messageText);
+    } else {
+      console.warn('⚠️ TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID не заданы в .env');
     }
 
     // 3. Отправка в AmoCRM (имитация отправки встроенной формы)

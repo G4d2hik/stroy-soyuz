@@ -62,7 +62,7 @@ export default function HomePage() {
             <div className="flex items-center gap-3 mb-6">
               <div className="gold-divider" />
               <span className="text-[11px] font-medium uppercase tracking-[0.25em] text-[var(--color-accent)]">
-                Махачкала и Республика Дагестан
+                Работаем по всей России и за пределами
               </span>
             </div>
 
@@ -73,7 +73,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-base md:text-lg text-[var(--color-text-secondary)] max-w-xl mb-10 leading-relaxed">
-              Премиальное строительство, дизайн-проектирование, фасады, интерьеры и ландшафт по всему Дагестану.
+              Премиальные дома, дизайн-проектирование, фасады, интерьеры и ландшафт.
               Комплексный подход к каждому объекту с гарантией качества.
             </p>
 

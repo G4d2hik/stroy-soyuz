@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, Send, Check } from "lucide-react";
 import { submitLead } from "@/app/actions/submitLead";
+import { sendTelegramFromBrowser } from "@/lib/sendTelegramClient";
 
 interface QuizQuestion {
   id: number;
@@ -107,6 +108,8 @@ export default function Quiz({ onComplete }: QuizProps) {
     setIsSubmitting(false);
     
     if (result.success) {
+      // Отправляем уведомление в Telegram из браузера (обход блокировки сервера)
+      sendTelegramFromBrowser(leadData, "Квиз");
       onComplete();
     } else {
       alert("К сожалению, произошла ошибка при отправке. Пожалуйста, позвоните нам.");
