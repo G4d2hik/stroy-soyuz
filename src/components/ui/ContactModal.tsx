@@ -12,9 +12,18 @@ export default function ContactModal() {
   const [phone, setPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [source, setSource] = useState("Модальное окно");
 
   useEffect(() => {
-    const handleOpen = () => setIsOpen(true);
+    const handleOpen = (e: Event) => {
+      setIsOpen(true);
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.source) {
+        setSource(customEvent.detail.source);
+      } else {
+        setSource("Модальное окно");
+      }
+    };
     
     // Подписываемся на кастомное событие
     window.addEventListener("open-contact-modal", handleOpen);
@@ -38,12 +47,12 @@ export default function ContactModal() {
     if (!name || !phone) return;
 
     setIsSubmitting(true);
-    const result = await submitLead({ name, phone }, "Модальное окно");
+    const result = await submitLead({ name, phone }, source);
     setIsSubmitting(false);
 
     if (result.success) {
       // Отправляем уведомление в Telegram из браузера (обход блокировки сервера)
-      sendTelegramFromBrowser({ name, phone }, "Модальное окно");
+      sendTelegramFromBrowser({ name, phone }, source);
       setIsSuccess(true);
       setTimeout(close, 3000);
     } else {
